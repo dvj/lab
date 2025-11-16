@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="iPad-friendly tracing playground for kids to practice fine motor skills." />
+  <title>Motor Skills Tracing Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__copy">
+      <p class="eyebrow">Fine motor practice</p>
+      <h1>Motor Skills Lab</h1>
+      <p class="lede">Trace playful paths with your finger on an iPad. Choose practice lines, try a challenge, or follow a character home.</p>
+      <div class="hero__tips">
+        <span>Use your fingertip or an Apple Pencil</span>
+        <span>Tap <strong>Clear</strong> any time to restart</span>
+        <span>Stay inside the glow when inside-lines mode is on</span>
+      </div>
+    </div>
+    <div class="hero__actions">
+      <button class="pill-button" id="stayToggle" aria-pressed="false">Stay inside the lines: Off</button>
+      <button class="pill-button pill-button--ghost" id="clearCanvas">Clear drawing</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="controls" aria-label="Pattern selection">
+      <div class="control-card">
+        <div class="card-head">
+          <h2>Practice paths</h2>
+          <p>Pick a shape to warm up.</p>
+        </div>
+        <div class="button-grid" id="practiceButtons"></div>
+      </div>
+
+      <div class="control-card">
+        <div class="card-head">
+          <h2>Story games</h2>
+          <p>Guide friends to safety.</p>
+        </div>
+        <div class="button-grid" id="storyButtons"></div>
+      </div>
+
+      <div class="control-card controls__extras">
+        <div class="control-row">
+          <label for="inkColor">Ink color</label>
+          <input id="inkColor" type="color" value="#134ff2" aria-label="Drawing color">
+        </div>
+        <div class="control-row">
+          <label for="penSize">Line width</label>
+          <input id="penSize" type="range" min="4" max="28" value="12" aria-label="Line width">
+          <output id="penSizeValue" aria-hidden="true">12px</output>
+        </div>
+        <div class="control-row">
+          <label for="guideWidth">Guide width</label>
+          <input id="guideWidth" type="range" min="12" max="44" value="24" aria-label="Guide stroke width">
+          <output id="guideWidthValue" aria-hidden="true">24px</output>
+        </div>
+        <div class="control-row">
+          <label for="glowSize">Guide glow</label>
+          <input id="glowSize" type="range" min="18" max="52" value="30" aria-label="Guide glow size">
+          <output id="glowValue" aria-hidden="true">30px</output>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Tracing workspace">
+      <div class="workspace__info">
+        <div>
+          <p class="eyebrow" id="modeLabel">Simple practice</p>
+          <h2 id="patternLabel">Gentle wave</h2>
+          <p id="patternStory">Follow the soft curves to warm up your wrist.</p>
+        </div>
+        <div class="badges" aria-label="Current requirements">
+          <span class="badge" id="difficultyBadge">Simple</span>
+          <span class="badge badge--soft" id="stayBadge">Inside-lines off</span>
+        </div>
+      </div>
+      <div class="canvas-shell">
+        <canvas id="traceCanvas" aria-label="Tracing canvas"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Ready for GitHub Pages. Publish this folder and load <strong>motor_skills/index.html</strong> on an iPad for best results.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
