@@ -1,0 +1,10 @@
+# Normalize text files to LF endings for consistent diffs/merges
+* text=auto eol=lf
+
+# Treat common assets as binary to avoid line-ending noise
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.svg binary
