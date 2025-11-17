@@ -231,6 +231,10 @@ function pathFromSteps(steps) {
   return path;
 }
 
+function lastItem(list) {
+  return list[list.length - 1];
+}
+
 function setPattern(pattern, group) {
   currentPattern = { ...pattern, group };
   currentSteps = generateVariantSteps(pattern.steps);
@@ -302,7 +306,8 @@ function drawMarkers() {
   ctx.restore();
 
   const start = scalePoint(currentSteps?.start || currentPattern.steps.start);
-  const lastSeg = (currentSteps || currentPattern.steps).segments.at(-1);
+  const segments = (currentSteps || currentPattern.steps).segments;
+  const lastSeg = segments.length ? segments[segments.length - 1] : null;
   const end = lastSeg?.to ? scalePoint(lastSeg.to) : start;
   drawMarker(start, currentPattern.decorations?.startIcon || '🏁', currentPattern.decorations?.color || '#0f1e4a');
   drawMarker(end, currentPattern.decorations?.endIcon || '🎯', '#8b5cf6');
@@ -480,10 +485,10 @@ function distance(a, b) {
 function evaluateCompletion() {
   if (!strokes.length || !guidePath || !currentSteps) return;
   const start = scalePoint(currentSteps.start);
-  const lastSeg = currentSteps.segments.at(-1);
+  const lastSeg = currentSteps.segments[currentSteps.segments.length - 1];
   const end = lastSeg?.to ? scalePoint(lastSeg.to) : start;
   const radius = 30 * dpr;
-  const allPoints = strokes.flatMap((s) => s.points);
+  const allPoints = strokes.reduce((pts, s) => pts.concat(s.points), []);
   if (!allPoints.length) return;
   const pathLength = allPoints.reduce((len, p, idx, arr) => {
     if (idx === 0) return 0;
@@ -491,7 +496,7 @@ function evaluateCompletion() {
     return len + Math.hypot(p.x - prev.x, p.y - prev.y);
   }, 0);
   const startedNear = distance(allPoints[0], start) <= radius * 1.2;
-  const endedNear = distance(allPoints.at(-1), end) <= radius * 1.2;
+  const endedNear = distance(allPoints[allPoints.length - 1], end) <= radius * 1.2;
   const touchedStart = allPoints.some((p) => distance(p, start) <= radius);
   const touchedEnd = allPoints.some((p) => distance(p, end) <= radius);
   const stayedInside = strokes.every((s) => s.stayedInGuide !== false && s.points.every((p) => isPointInGuide(p)));
@@ -499,7 +504,7 @@ function evaluateCompletion() {
   const continuous = strokes.every((s, idx) => {
     if (idx === 0) return true;
     const prevStroke = strokes[idx - 1];
-    const lastPoint = prevStroke.points.at(-1);
+    const lastPoint = lastItem(prevStroke.points);
     const firstPoint = s.points[0];
     return distance(lastPoint, [firstPoint.x, firstPoint.y]) <= gapAllowance;
   });
