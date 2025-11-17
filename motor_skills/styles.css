@@ -256,12 +256,6 @@ body {
   user-select: none;
 }
 
-.footer {
-  padding: 8px clamp(14px, 2.5vw, 30px) 12px;
-  color: #4c5779;
-  font-size: 14px;
-}
-
 .status-bar {
   position: absolute;
   inset: 10px auto auto 12px;
@@ -290,7 +284,7 @@ body {
   top: -12px;
   border-radius: 4px;
   opacity: 0.95;
-  animation: confettiFall 2.4s ease-out forwards;
+  animation: confettiFall 4.8s ease-out forwards;
 }
 
 .confetti__piece:nth-child(3n) { background: #6dd3b5; }

@@ -99,13 +99,17 @@ const PATTERNS = {
       story: 'Trace the fox sprinting through twists and arches to reach the cozy den.',
       color: '#ffa17a',
       steps: {
-        start: [100, 440],
+        start: [90, 480],
         segments: [
-          { type: 'line', to: [220, 260] },
-          { type: 'quad', cp: [320, 160], to: [460, 260] },
-          { type: 'line', to: [560, 420] },
-          { type: 'quad', cp: [660, 560], to: [760, 380] },
-          { type: 'quad', cp: [820, 240], to: [860, 200] },
+          { type: 'line', to: [200, 340] },
+          { type: 'line', to: [160, 220] },
+          { type: 'line', to: [320, 200] },
+          { type: 'line', to: [340, 360] },
+          { type: 'line', to: [500, 340] },
+          { type: 'line', to: [540, 190] },
+          { type: 'line', to: [700, 240] },
+          { type: 'line', to: [720, 420] },
+          { type: 'line', to: [860, 300] },
         ],
       },
       decorations: {
@@ -168,23 +172,48 @@ function jitterPoint(point, amount) {
 }
 
 function generateVariantSteps(steps) {
-  const startJitter = 26 + Math.random() * 18;
-  const pointJitter = 34 + Math.random() * 30;
-  const curveJitter = 40 + Math.random() * 28;
+  const startJitter = 30 + Math.random() * 30;
+  const pointJitter = 42 + Math.random() * 34;
+  const curveJitter = 46 + Math.random() * 34;
   const jitteredStart = jitterPoint(steps.start, startJitter);
-  const segments = steps.segments.map((seg, idx) => {
+  const segments = [];
+  let prevPoint = jitteredStart;
+
+  steps.segments.forEach((seg, idx) => {
     if (seg.type === 'line') {
-      return { ...seg, to: jitterPoint(seg.to, pointJitter + idx * 2) };
+      const target = jitterPoint(seg.to, pointJitter + idx * 4);
+      const wiggleChance = 0.72;
+      if (Math.random() < wiggleChance) {
+        const mid = [(prevPoint[0] + target[0]) / 2, (prevPoint[1] + target[1]) / 2];
+        const bend = jitterPoint(mid, pointJitter * 0.6 + 24 * Math.random());
+        segments.push({ type: 'line', to: bend });
+        segments.push({ type: 'line', to: target });
+        prevPoint = target;
+        return;
+      }
+      segments.push({ ...seg, to: target });
+      prevPoint = target;
+      return;
     }
     if (seg.type === 'quad') {
-      return {
-        ...seg,
-        cp: jitterPoint(seg.cp, curveJitter),
-        to: jitterPoint(seg.to, pointJitter + Math.random() * 8),
-      };
+      const cp = jitterPoint(seg.cp, curveJitter + idx * 3);
+      const to = jitterPoint(seg.to, pointJitter + Math.random() * 16);
+      if (Math.random() < 0.35) {
+        const mid = [(cp[0] + to[0]) / 2, (cp[1] + to[1]) / 2];
+        const midBump = jitterPoint(mid, curveJitter * 0.8);
+        segments.push({ type: 'quad', cp, to: midBump });
+        segments.push({
+          type: 'quad',
+          cp: jitterPoint(midBump, 12 + Math.random() * curveJitter * 0.4),
+          to,
+        });
+      } else {
+        segments.push({ ...seg, cp, to });
+      }
+      prevPoint = to;
     }
-    return seg;
   });
+
   return { start: jitteredStart, segments };
 }
 
@@ -229,6 +258,16 @@ function pathFromSteps(steps) {
     }
   }
   return path;
+}
+
+function getMarkerPoints() {
+  const steps = currentSteps || currentPattern?.steps;
+  if (!steps) return null;
+  const start = scalePoint(steps.start);
+  const segments = steps.segments || [];
+  const lastSeg = segments.length ? segments[segments.length - 1] : null;
+  const end = lastSeg?.to ? scalePoint(lastSeg.to) : start;
+  return { start, end };
 }
 
 function lastItem(list) {
@@ -288,6 +327,8 @@ function updateLabels() {
 
 function drawMarkers() {
   if (!guidePath || !currentPattern) return;
+  const markers = getMarkerPoints();
+  if (!markers) return;
   const glowColor = guideWarning ? 'rgba(238,82,82,0.28)' : 'rgba(19,79,242,0.16)';
   const guideColor = guideWarning ? '#ff5a63' : currentPattern.color || '#8fb3ff';
   ctx.save();
@@ -305,10 +346,8 @@ function drawMarkers() {
   ctx.stroke(guidePath);
   ctx.restore();
 
-  const start = scalePoint(currentSteps?.start || currentPattern.steps.start);
-  const segments = (currentSteps || currentPattern.steps).segments;
-  const lastSeg = segments.length ? segments[segments.length - 1] : null;
-  const end = lastSeg?.to ? scalePoint(lastSeg.to) : start;
+  const start = markers.start;
+  const end = markers.end;
   drawMarker(start, currentPattern.decorations?.startIcon || '🏁', currentPattern.decorations?.color || '#0f1e4a');
   drawMarker(end, currentPattern.decorations?.endIcon || '🎯', '#8b5cf6');
 }
@@ -469,6 +508,13 @@ function setGuideWarning(state) {
 
 function isPointInGuide(pos) {
   if (!guidePath) return true;
+  const markers = getMarkerPoints();
+  const markerAllowance = (guideStroke + 20) * dpr;
+  if (markers) {
+    const inStart = distance(pos, markers.start) <= markerAllowance;
+    const inEnd = distance(pos, markers.end) <= markerAllowance;
+    if (inStart || inEnd) return true;
+  }
   ctx.save();
   ctx.lineWidth = (guideStroke + 8) * dpr;
   const inStroke = ctx.isPointInStroke(guidePath, pos.x, pos.y);
@@ -484,9 +530,10 @@ function distance(a, b) {
 
 function evaluateCompletion() {
   if (!strokes.length || !guidePath || !currentSteps) return;
-  const start = scalePoint(currentSteps.start);
-  const lastSeg = currentSteps.segments[currentSteps.segments.length - 1];
-  const end = lastSeg?.to ? scalePoint(lastSeg.to) : start;
+  const markers = getMarkerPoints();
+  if (!markers) return;
+  const start = markers.start;
+  const end = markers.end;
   const radius = 30 * dpr;
   const allPoints = strokes.reduce((pts, s) => pts.concat(s.points), []);
   if (!allPoints.length) return;
@@ -518,17 +565,17 @@ function evaluateCompletion() {
 function launchConfetti() {
   const container = document.createElement('div');
   container.className = 'confetti';
-  const pieces = 40;
+  const pieces = 90;
   for (let i = 0; i < pieces; i++) {
     const piece = document.createElement('div');
     piece.className = 'confetti__piece';
     piece.style.left = `${Math.random() * 100}%`;
-    piece.style.animationDelay = `${Math.random() * 0.25}s`;
+    piece.style.animationDelay = `${Math.random() * 0.35}s`;
     piece.style.transform = `translateY(0) rotate(${Math.random() * 90}deg)`;
     container.appendChild(piece);
   }
   document.body.appendChild(container);
-  setTimeout(() => container.remove(), 2600);
+  setTimeout(() => container.remove(), 5200);
 }
 
 function init() {
